@@ -1,0 +1,24 @@
+{
+  "name": "m4-special",
+  "version": "1.0.0",
+  "description": "Milestone 4 for DevOps",
+  "main": "main.js",
+  "dependencies": {
+    "aws-sdk": "^2.2.19",
+    "node-uuid": "^1.4.7"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DevOpsGHZ/M4-SPECIAL.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DevOpsGHZ/M4-SPECIAL/issues"
+  },
+  "homepage": "https://github.com/DevOpsGHZ/M4-SPECIAL#readme"
+}
