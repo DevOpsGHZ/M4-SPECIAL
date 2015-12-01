@@ -58,7 +58,7 @@ ec2.runInstances(properties,function(err,data)
 			         console.log('Getting instance ip..');
 			         console.log(data.Reservations[0].Instances[0].PublicIpAddress);
 			         var ec2Ip = data.Reservations[0].Instances[0].PublicIpAddress;	
-			         var record ='node0 ansible_ssh_host='+ec2Ip+' ansible_ssh_user='+'ubuntu '+'ansible_ssh_private_key_file='+ 'private.key'+'\n';           			
+			         var record ='server ansible_ssh_host='+ec2Ip+' ansible_ssh_user='+'ubuntu '+'ansible_ssh_private_key_file='+ 'private.key'+'\n';           			
 			         fs.writeFile("inventory", record, function(error) {
                 	if (error) 
                 	{
