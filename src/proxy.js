@@ -77,16 +77,16 @@ nodeServers.push( { 'addr': 'localhost', 'port': 3060, 'latency': 0 } );
 
 
     // Launch green slice
-    // exec('cd www; http-server', function(err, out, code) 
-    //  {
-    //    console.log("attempting to launch monitor");
-    //    if (err instanceof Error)
-    //          throw err;
-    //    if( err )
-    //    {
-    //      console.error( err );
-    //    }
-    //  });
+    exec('cd www; http-server -p 9999', function(err, out, code) 
+     {
+       console.log("attempting to launch monitor");
+       if (err instanceof Error)
+             throw err;
+       if( err )
+       {
+         console.error( err );
+       }
+     });
 
     server.listen(3000);
     io = require('socket.io').listen(server);
