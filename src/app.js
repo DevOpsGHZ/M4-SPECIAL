@@ -243,7 +243,7 @@ var nodeServers = [];
 //////////////
 setInterval( function () 
 {
-  var message = "3000" + "#" + cpuAverage() + "#" + memoryLoad();
+  var message = ip + "#" + cpuAverage() + "#" + memoryLoad();
   console.log(message);
   client.set( ip, message);
   
