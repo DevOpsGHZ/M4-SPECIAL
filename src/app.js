@@ -7,11 +7,15 @@ var bodyParser = require('body-parser');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
-
+var http      = require('http');
+var httpProxy = require('http-proxy');
+var exec = require('child_process').exec;
 var request = require("request")
+var os = require("os");
 
 var url = "http://ipinfo.io"
 var ipinfo = require('./ip.json');
+var ip = ipinfo.ip;
 console.log(ipinfo);
 var app = express();
 // console.log(process.env.REDIS_PORT_6379_TCP_ADDR + ':' + process.env.REDIS_PORT_6379_TCP_PORT);
@@ -165,3 +169,98 @@ module.exports = app;
 
 var server = require('http').createServer(app);
 server.listen(3000);
+
+function memoryLoad()
+{
+  // console.log("memoryLoad");
+  var load = ~~ ( 100 * (os.totalmem() - os.freemem()) / os.totalmem());
+  if(load > 90)
+  {
+    client.set("route", 1);
+    sendMail();
+  }
+  // if(load < 70)
+  // {
+  //   client.set("route", 1); 
+  // }
+  return load;
+}
+
+// Create function to get CPU information
+function cpuTicksAcrossCores() 
+{
+  //Initialise sum of idle and time of cores and fetch CPU info
+  var totalIdle = 0, totalTick = 0;
+  var cpus = os.cpus();
+ 
+  //Loop through CPU cores
+  for(var i = 0, len = cpus.length; i < len; i++) 
+  {
+    //Select CPU core
+    var cpu = cpus[i];
+    //Total up the time in the cores tick
+    for(type in cpu.times) 
+    {
+      totalTick += cpu.times[type];
+    }     
+    //Total up the idle time of the core
+    totalIdle += cpu.times.idle;
+  }
+ 
+  //Return the average Idle and Tick times
+  return {idle: totalIdle / cpus.length,  total: totalTick / cpus.length};
+}
+
+var startMeasure = cpuTicksAcrossCores();
+
+function cpuAverage()
+{
+  var endMeasure = cpuTicksAcrossCores(); 
+ 
+  //Calculate the difference in idle and total time between the measures
+  var idleDifference = endMeasure.idle - startMeasure.idle;
+  var totalDifference = endMeasure.total - startMeasure.total;
+ 
+  //Calculate the average percentage CPU usage
+  var usage = ~~ ( 100 * (totalDifference - idleDifference) / totalDifference );
+  if(usage > 50)
+  {
+    client.set("route", 1);
+    sendMail();
+  }
+  // if( usage <)
+
+  return usage;
+}
+
+/// CHILDREN nodes
+var nodeServers = [];
+// nodeServers.push( { 'addr': process.env.PRODUCTION_PORT_3000_TCP_ADDR, 'port': process.env.PRODUCTION_PORT_3000_TCP_PORT, 'latency': 0 } );
+// nodeServers.push( { 'addr': process.env.STAGING_PORT_3000_TCP_ADDR, 'port': process.env.STAGING_PORT_3000_TCP_PORT, 'latency': 0 } );
+
+///////////////
+//// Broadcast heartbeat over websockets
+//////////////
+setInterval( function () 
+{
+  client.set( ip, "3000" + "#" + cpuAverage() + "#" + memoryLoad());
+  
+}, 2000);
+
+// app.listen(3080);
+
+/// NODE SERVERS
+
+function createServer(port, fn)
+{
+  // Response to http requests.
+  var server = http.createServer(function (req, res) {
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+
+      fn();
+
+      res.end();
+   }).listen(port);
+  nodeServers.push( app );
+}
+
