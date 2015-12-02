@@ -14,7 +14,7 @@ var app = express();
 var redis = require('redis')
 // var client = redis.createClient(process.env.REDIS_PORT_6379_TCP_PORT,process.env.REDIS_PORT_6379_TCP_ADDR, {})
 // view engine setup
-var client = redis.createClient(redis, 6379, {})
+var client = redis.createClient("redis", 6379, {})
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
