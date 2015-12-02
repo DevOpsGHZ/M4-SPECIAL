@@ -1,5 +1,9 @@
 ---
 - hosts: all 
+  roles:
+    - angstwad.docker_ubuntu
+  sudo: yes
+
   tasks:
     - name: Install Git
       apt: pkg=git state=installed update_cache=true
@@ -16,9 +20,9 @@
       command: apt-get update
       sudo: yes
    
-    - name: Install docker
-      apt: pkg=docker.io state=installed update_cache=true
-      sudo: yes
+#    - name: Install docker
+#      apt: pkg=docker.io state=installed update_cache=true
+#      sudo: yes
 
 #    - name: start docker
 #      command: service docker start

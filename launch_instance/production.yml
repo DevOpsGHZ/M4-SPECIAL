@@ -7,11 +7,11 @@
     - name: Upload Dockefile
       copy: src=prod-Dockerfile dest=~/production/Dockerfile
     
-    - stat: path=~/production/M3-Deployment
+    - stat: path=~/production/M4-SPECIAL
       register: repo_exist
     
     - name: Git clone
-      command: git clone https://github.com/DevOpsGHZ/M3-Deployment
+      command: git clone https://github.com/DevOpsGHZ/M4-SPECIAL 
       when: repo_exist.stat.exists == False
       args:
         chdir: ~/production
@@ -20,7 +20,7 @@
       command: git pull
       when: repo_exist.stat.exists == True
       args:
-        chdir: ~/production/M3-Deployment
+        chdir: ~/production/M4-SPECIAL
     
    # - name: Tag the old image
    #   command: docker tag localhost:5000/sample:latest localhost:5000/sample:previous
@@ -38,14 +38,25 @@
         docker_api_version: 1.18
       sudo: yes
 
-    - name: Redis container
+#    - name: Redis container
+#      docker:
+#        name: myredis
+#        image: redis
+#        command: redis-server --appendonly yes
+#        state: started
+#        expose:
+#          - 6379
+#        docker_api_version: 1.18
+#      sudo: yes
+    - name: Redis ambassador 
       docker:
-        name: myredis
-        image: redis
-        command: redis-server --appendonly yes
-        state: started
+        name: redis_ambassador
+        image: svendowideit/ambassador
         expose:
           - 6379
+        env:
+            REDIS_PORT_6379_TCP: tcp://52.90.214.22:6379
+        state: started
         docker_api_version: 1.18
       sudo: yes
 
@@ -63,8 +74,8 @@
       command: docker push localhost:5000/sample:production
       sudo: yes
 
-    - name: Route all traffic to staging app
-      command: echo set route 2 | redis-cli -h 172.17.0.3
+#    - name: Route all traffic to staging app
+#      command: echo set route 2 | redis-cli -h 172.17.0.3
 
     - name: stop app
       command: docker rm -f app
@@ -79,14 +90,14 @@
         state: restarted
         pull: always
         links:
-          - "myredis:redis"
+          - "redis_ambassador:redis"
         ports:
-          - 3001:3000
+          - 3000:3000
         docker_api_version: 1.18
       sudo: yes
 
-    - name: Back to normal routing
-      command: echo set route 1 | redis-cli -h 172.17.0.3
+  #  - name: Back to normal routing
+  #    command: echo set route 1 | redis-cli -h 172.17.0.3
    # - name: run
    #   command: docker run -p 50100:8080 -d --name app localhost:5000/sample:latest
    #   sudo: yes 

@@ -5,14 +5,21 @@ var exec = require('child_process').exec;
 var request = require("request");
 var os = require("os");
 var nodemailer = require('nodemailer');
-// var client = redis.createClient(6379, '127.0.0.1', {})
-// var instance1 = 'http://127.0.0.1:3030';
-// var instance2  = 'http://127.0.0.1:3060';
-var client = redis.createClient(process.env.REDIS_PORT_6379_TCP_PORT,process.env.REDIS_PORT_6379_TCP_ADDR, {})
-var instance1 = 'http://' + process.env.PRODUCTION_PORT_3000_TCP_ADDR + ':' + process.env.PRODUCTION_PORT_3000_TCP_PORT;
-var instance2 = 'http://' + process.env.STAGING_PORT_3000_TCP_ADDR + ':' + process.env.STAGING_PORT_3000_TCP_PORT;
+var client = redis.createClient(6379, '52.90.214.22', {})
+var instance1 = 'http://52.90.211.20:3000';
+var instance2  = 'http://52.91.7.92:3000';
+// var client = redis.createClient(process.env.REDIS_PORT_6379_TCP_PORT,process.env.REDIS_PORT_6379_TCP_ADDR, {})
+// var instance1 = 'http://' + process.env.PRODUCTION_PORT_3000_TCP_ADDR + ':' + process.env.PRODUCTION_PORT_3000_TCP_PORT;
+// var instance2 = 'http://' + process.env.STAGING_PORT_3000_TCP_ADDR + ':' + process.env.STAGING_PORT_3000_TCP_PORT;
 // var TARGET = BLUE;
 var io;
+
+var appNode;
+
+/// CHILDREN nodes
+var nodeServers = [];
+// nodeServers.push( { 'addr': process.env.PRODUCTION_PORT_3000_TCP_ADDR, 'port': process.env.PRODUCTION_PORT_3000_TCP_PORT, 'latency': 0 } );
+// nodeServers.push( { 'addr': process.env.STAGING_PORT_3000_TCP_ADDR, 'port': process.env.STAGING_PORT_3000_TCP_PORT, 'latency': 0 } );
 
 var infrastructure =
 {
@@ -22,6 +29,13 @@ var infrastructure =
 //    client.lpush('servers', instance1);
 //    client.lpush('servers', instance2);
 //    client.ltrim('servers', 0, 1);
+    appNode = {'addr': 'localhost', 'port': 3000, 'latency': 0 };
+    nodeServers.push( appNode );
+nodeServers.push( { 'addr': 'localhost', 'port': 3030, 'latency': 0 } );
+nodeServers.push( { 'addr': 'localhost', 'port': 3060, 'latency': 0 } );
+
+
+
     client.set("percent", 0.8);
     var options = {};
     var proxy   = httpProxy.createProxyServer(options);
@@ -63,16 +77,16 @@ var infrastructure =
 
 
     // Launch green slice
-    exec('cd www; http-server', function(err, out, code) 
-     {
-       console.log("attempting to launch monitor");
-       if (err instanceof Error)
-             throw err;
-       if( err )
-       {
-         console.error( err );
-       }
-     });
+    // exec('cd www; http-server', function(err, out, code) 
+    //  {
+    //    console.log("attempting to launch monitor");
+    //    if (err instanceof Error)
+    //          throw err;
+    //    if( err )
+    //    {
+    //      console.error( err );
+    //    }
+    //  });
 
     server.listen(3000);
     io = require('socket.io').listen(server);
@@ -123,7 +137,7 @@ function memoryLoad()
 {
   // console.log("memoryLoad");
   var load = ~~ ( 100 * (os.totalmem() - os.freemem()) / os.totalmem());
-  if(load > 95)
+  if(load > 90)
   {
     client.set("route", 1);
     sendMail();
@@ -182,35 +196,42 @@ function cpuAverage()
   return usage;
 }
 
-function measureLatenancy(node)
+function measureLatenancy(addr, port)
 {
+  var node = {'addr': addr, 'port': port, 'latency': 0 };
+  for(var i = 0; i < nodeServers.length; i++)
+  {
+    // if(nodeServers[i].addr == addr && nodeServers[i].port == port)
+      node = nodeServers[i];
+  }
   var options = 
   {
-    url: 'http://' + node.addr + ":" + node.port,
+    url: 'http://' + addr + ":" + port,
   };
 
   var startTime = Date.now();
-  var latency;
+  var latency = -1;
   request(options, function (error, res, body) 
   {
     node.latency = Date.now() - startTime;
+    console.log(node.latency);
+    latency = node.latency;
   });
   if(node.latency > 400)
   {
     client.set("route", 1);
     sendMail();
   }
+  console.log(latency);
   return node.latency;
 }
 
-function calcuateColor()
+function calcuateColor(latency)
 {
   // latency scores of all nodes, mapped to colors.
-  var nodes = nodeServers.map( measureLatenancy ).map( function(latency) 
-  {
     var color = "#cccccc";
     if( !latency )
-      return {color: color};
+      return [{color: color}];
     if( latency > 500 )
     {
       color = "#ff0000";
@@ -236,32 +257,52 @@ function calcuateColor()
       color = "#00ff00";
     }
     //console.log( latency );
-    return {color: color};
-  });
-  //console.log( nodes );
-  return nodes;
+    return [{color: color}];
 }
-
-
-/// CHILDREN nodes
-var nodeServers = [];
-nodeServers.push( { 'addr': process.env.PRODUCTION_PORT_3000_TCP_ADDR, 'port': process.env.PRODUCTION_PORT_3000_TCP_PORT, 'latency': 0 } );
-nodeServers.push( { 'addr': process.env.STAGING_PORT_3000_TCP_ADDR, 'port': process.env.STAGING_PORT_3000_TCP_PORT, 'latency': 0 } );
-
-var appNode = {'addr': 'localhost', 'port': 3000, 'latency': 0 };
 
 ///////////////
 //// Broadcast heartbeat over websockets
 //////////////
 setInterval( function () 
 {
-  io.sockets.emit('heartbeat', 
-  { 
-        name: "Server", cpu: cpuAverage(), memoryLoad: memoryLoad(), latency: measureLatenancy(appNode),
-        nodes: calcuateColor()
-   });
+  // for(var i = 0; i < nodeServers.length; i++)
+  // {
+  //     console.log(nodeServers[i].port);
+  //     client.get( "server" + nodeServers[i].port, function(err,value){
+  //       var info = value.split('#');
+  //       var latency = measureLatenancy('localhost', info[0]);
+  //       io.sockets.emit('heartbeat', 
+  //       { 
+  //         // name: "server" + nodeServers[i].port, cpu: cpuAverage(), memoryLoad: memoryLoad(), latency: measureLatenancy(appNode),
+  //         name: "server" + info[0], cpu: info[1], memoryLoad: info[2], latency: latency,
+  //         nodes: calcuateColor(latency)
+  //       });
+  //     });
+  // }
+  client.rpoplpush('servers', 'servers', function (err, reply){
+        // proxy.web( req, res, {target: reply } );  
+        var server = reply;
+        console.log(reply);
+        if(reply != 0 && reply != null){
+          client.get( server, function (err, value){
+            console.log(value);
+          var info = value.split('#');
+          var latency = measureLatenancy(info[0], "3000")
+          console.log(latency);
+          // var message = 
+          io.sockets.emit('heartbeat', 
+        { 
+          // name: "server" + nodeServers[i].port, cpu: cpuAverage(), memoryLoad: memoryLoad(), latency: measureLatenancy(appNode),
+          name: info[0] + ":3000", cpu: info[1], memoryLoad: info[2], latency: latency,
+          nodes: calcuateColor(latency)
+        });
+        })
+        }
+        
+  });
 
-}, 2000);
+
+}, 3000);
 
 // app.listen(3080);
 

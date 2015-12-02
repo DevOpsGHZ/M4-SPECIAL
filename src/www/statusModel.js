@@ -14,8 +14,17 @@ var StatusModel = function(clients) {
  
     self.updateClient = function(person) 
     {
+
+        var flag = 0;
+
+        if(self.clients().length === undefined)
+        {
+            self.addClient(person);
+        }
+
         for(var i = 0 ; i < self.clients().length ; i++)
         {
+
             var koObj = self.clients()[i];
             //console.log( koObj.name() )
             if(self.clients()[i].name() === person.name)
@@ -28,9 +37,25 @@ var StatusModel = function(clients) {
                 {
                     koObj.nodes.push( new NodeModel(person.nodes[j]) );
                 }
+                flag = 1;
+                break;
+            }
+
+        }
+        if(flag == 0){
+            self.addClient(person);
+            console.log("added") ;       
+        }
+        for(var i = 0; i < self.clients().length; i++){
+            if(self.clients()[i].name() === "Server"){
+                console.log("removed");
+                console.log(self.clients()[i]);
+                console.log(self.clients().length);
+                self.removeClient(self.clients()[i]);
                 break;
             }
         }
+        // self.clients.remove( function (item) { return item.name == "Server"; } )
     };
 
     // initialize first time.
@@ -63,9 +88,9 @@ var NodeModel = function(node) {
 
  
 var viewModel = new StatusModel(
-[
+    [
     { 
-        name: "Server", cpu: "0.00", memoryLoad: "0", latency: "0",
+        name: "Server", cpu: "-1", memoryLoad: "-1", latency: "0",
         nodes: 
         [
             {color:"#ab3fdd"},
@@ -81,7 +106,7 @@ $(document).ready( function()
     ko.applyBindings(viewModel);
     $('#statusTable').DataTable( { "paging":   false, "info":     false });
 
-    var socket = io.connect('http://54.175.23.6:3000');
+    var socket = io.connect('http://localhost:3000');
 
     socket.on("heartbeat", function(client) 
     {

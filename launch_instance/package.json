@@ -5,7 +5,8 @@
   "main": "main.js",
   "dependencies": {
     "aws-sdk": "^2.2.19",
-    "node-uuid": "^1.4.7"
+    "node-uuid": "^1.4.7",
+    "request": "^2.67.0"
   },
   "devDependencies": {},
   "scripts": {

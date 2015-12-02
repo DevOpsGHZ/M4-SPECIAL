@@ -34,7 +34,19 @@ var client = redis.createClient(process.env.REDIS_PORT_6379_TCP_PORT,process.env
 //     }
 
 // })
-
+client.lrange("servers", 0, -1, function (err, reply){
+  var flag = 0;
+  for(int i = 0; i < reply.length; i++){
+    if(reply[i] == ip)
+    {
+      flag = 1;
+    }
+  }
+  if(flag == 0)
+  {
+    client.lpush("servers", ip);
+  }
+});
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
