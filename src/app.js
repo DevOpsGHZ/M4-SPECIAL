@@ -8,13 +8,30 @@ var bodyParser = require('body-parser');
 var routes = require('./routes/index');
 var users = require('./routes/users');
 
+var request = require("request")
 
+var url = "http://ipinfo.io"
+var ipinfo = require('./ip.json');
+console.log(ipinfo);
 var app = express();
 // console.log(process.env.REDIS_PORT_6379_TCP_ADDR + ':' + process.env.REDIS_PORT_6379_TCP_PORT);
 var redis = require('redis')
 var client = redis.createClient(process.env.REDIS_PORT_6379_TCP_PORT,process.env.REDIS_PORT_6379_TCP_ADDR, {})
 // view engine setup
 //var client = redis.createClient(6379, "redis", {})
+
+// request({
+//     url: "http://ipinfo.io",
+//     json: true
+// }, function (error, response, body) {
+
+//     if (!error && response.statusCode === 200) {
+//         console.log(body.ip) // Print the json response
+//     }
+
+// })
+
+
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
