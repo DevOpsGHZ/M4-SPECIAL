@@ -42,34 +42,37 @@ nodeServers.push( { 'addr': 'localhost', 'port': 3060, 'latency': 0 } );
 
     var server  = http.createServer(function(req, res)
     {
-      client.get("route",function(err, reply) {
-        if(reply == 1 || reply == null)
-        {
-          proxy.web( req, res, {target: instance1 } );  
-        }
-        else if(reply == 2)
-        {
-          proxy.web( req, res, {target: instance2 } );  
-        }
-        else
-        {
-          client.get("percent", function(err, rep){
-            var p = Math.random();
-            if( p < Number(rep) ) {
-              proxy.web( req, res, {target: instance1 } );  
-            }
-            else
-            {
-              proxy.web( req, res, {target: instance2 } );   
-            }
-          });
+      // client.get("route",function(err, reply) {
+      //   if(reply == 1 || reply == null)
+      //   {
+      //     proxy.web( req, res, {target: instance1 } );  
+      //   }
+      //   else if(reply == 2)
+      //   {
+      //     proxy.web( req, res, {target: instance2 } );  
+      //   }
+      //   else
+      //   {
+      //     client.get("percent", function(err, rep){
+      //       var p = Math.random();
+      //       if( p < Number(rep) ) {
+      //         proxy.web( req, res, {target: instance1 } );  
+      //       }
+      //       else
+      //       {
+      //         proxy.web( req, res, {target: instance2 } );   
+      //       }
+      //     });
           
-        }
-      });
+      //   }
+      // });
       
-      // client.rpoplpush('servers', 'servers', function (err, reply){
-        // proxy.web( req, res, {target: reply } );  
-      // })
+      client.rpoplpush('servers', 'servers', function (err, reply){
+        if(reply != 0){
+          proxy.web( req, res, {target: "http://" + reply +":3000"} );    
+        }
+        
+      });
       
       // res.send("haha");
       // console.log(res);
