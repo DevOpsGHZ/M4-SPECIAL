@@ -90,11 +90,9 @@ var NodeModel = function(node) {
 var viewModel = new StatusModel(
     [
     { 
-        name: "Server", cpu: "-1", memoryLoad: "-1", latency: "0",
+        name: "52.90.211.20:3000", cpu: "0.00", memoryLoad: "0", latency: "0",
         nodes: 
         [
-            {color:"#ab3fdd"},
-            {color:"#ab3fdd"},
             {color:"#ab3fdd"}
         ]
     }

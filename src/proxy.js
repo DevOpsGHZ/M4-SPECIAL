@@ -42,30 +42,6 @@ nodeServers.push( { 'addr': 'localhost', 'port': 3060, 'latency': 0 } );
 
     var server  = http.createServer(function(req, res)
     {
-      // client.get("route",function(err, reply) {
-      //   if(reply == 1 || reply == null)
-      //   {
-      //     proxy.web( req, res, {target: instance1 } );  
-      //   }
-      //   else if(reply == 2)
-      //   {
-      //     proxy.web( req, res, {target: instance2 } );  
-      //   }
-      //   else
-      //   {
-      //     client.get("percent", function(err, rep){
-      //       var p = Math.random();
-      //       if( p < Number(rep) ) {
-      //         proxy.web( req, res, {target: instance1 } );  
-      //       }
-      //       else
-      //       {
-      //         proxy.web( req, res, {target: instance2 } );   
-      //       }
-      //     });
-          
-      //   }
-      // });
       
       client.rpoplpush('servers', 'servers', function (err, reply){
         if(reply != 0){
@@ -93,24 +69,6 @@ nodeServers.push( { 'addr': 'localhost', 'port': 3060, 'latency': 0 } );
 
     server.listen(3000);
     io = require('socket.io').listen(server);
-    // // Launch blue slice
-    // exec('forever start --watch main2.js 3001', function(err, out, code) 
-    // {
-    //   console.log("attempting to launch instance2");
-    //   if (err instanceof Error)
-    //     throw err;
-    //   if( err )
-    //   {
-    //     console.error( err );
-    //   }
-    // });
-
-//setTimeout
-//var options = 
-//{
-//  url: "http://localhost:8080",
-//};
-//request(options, function (error, res, body) {
 
   },
 
@@ -213,19 +171,19 @@ function measureLatenancy(addr, port)
   };
 
   var startTime = Date.now();
-  var latency = -1;
+  // var latency = -1;
   request(options, function (error, res, body) 
   {
     node.latency = Date.now() - startTime;
     console.log(node.latency);
-    latency = node.latency;
+    // latency = node.latency;
   });
   if(node.latency > 400)
   {
     client.set("route", 1);
     // sendMail();
   }
-  console.log(latency);
+  // console.log(latency);
   return node.latency;
 }
 
@@ -282,6 +240,35 @@ setInterval( function ()
   //       });
   //     });
   // }
+  client.lrange('cpuload', 0, -1, function (err, reply){
+    var total;
+    for(var i = 0; i < reply.length; i++){
+      total += parseInt(reply[i]);
+    }
+    var average = total / reply.length;
+    if( average > 60){
+      // client.set("")
+      client.get("launch", function (err, reply){
+        if(reply != "working"){
+          //launch a new instance
+          client.set("launch", "working");
+          client.expire("launch", 1800);
+          child = exec("sh ../launch_instance/launch.sh", function (error, stdout, stderr) {
+                  // var config = require('./ip.json');
+                  // console.log(config.ip);  
+                  console.log('stdout: ' + stdout);
+                  console.log('stderr: ' + stderr);
+                  if (error !== null) {
+                      console.log('exec error: ' + error);
+                  }
+          });
+          
+        }
+      })
+    }
+  })
+
+
   client.rpoplpush('servers', 'servers', function (err, reply){
         // proxy.web( req, res, {target: reply } );  
         var server = reply;
@@ -291,14 +278,14 @@ setInterval( function ()
             console.log(value);
           var info = value.split('#');
           var latency = measureLatenancy(info[0], "3000")
-          console.log(latency);
+          // console.log(latency);
           // var message = 
           io.sockets.emit('heartbeat', 
-        { 
-          // name: "server" + nodeServers[i].port, cpu: cpuAverage(), memoryLoad: memoryLoad(), latency: measureLatenancy(appNode),
-          name: info[0] + ":3000", cpu: info[1], memoryLoad: info[2], latency: latency,
-          nodes: calcuateColor(latency)
-        });
+          { 
+            // name: "server" + nodeServers[i].port, cpu: cpuAverage(), memoryLoad: memoryLoad(), latency: measureLatenancy(appNode),
+            name: info[0] + ":3000", cpu: info[1], memoryLoad: info[2], latency: latency,
+            nodes: calcuateColor(latency)
+          });
         })
         }
         
