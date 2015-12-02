@@ -6,7 +6,7 @@ var request = require("request");
 var os = require("os");
 var nodemailer = require('nodemailer');
 var client = redis.createClient(6379, '52.90.214.22', {})
-var instance1 = 'http://52.90.211.20:3000';
+var instance1 = 'http://52.90.210.144:3000';
 var instance2  = 'http://52.91.7.92:3000';
 // var client = redis.createClient(process.env.REDIS_PORT_6379_TCP_PORT,process.env.REDIS_PORT_6379_TCP_ADDR, {})
 // var instance1 = 'http://' + process.env.PRODUCTION_PORT_3000_TCP_ADDR + ':' + process.env.PRODUCTION_PORT_3000_TCP_PORT;
@@ -140,7 +140,7 @@ function memoryLoad()
   if(load > 90)
   {
     client.set("route", 1);
-    sendMail();
+    // sendMail();
   }
   // if(load < 70)
   // {
@@ -189,7 +189,7 @@ function cpuAverage()
   if(usage > 50)
   {
     client.set("route", 1);
-    sendMail();
+    // sendMail();
   }
   // if( usage <)
 
@@ -220,7 +220,7 @@ function measureLatenancy(addr, port)
   if(node.latency > 400)
   {
     client.set("route", 1);
-    sendMail();
+    // sendMail();
   }
   console.log(latency);
   return node.latency;
