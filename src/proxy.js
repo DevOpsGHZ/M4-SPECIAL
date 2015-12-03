@@ -56,7 +56,7 @@ nodeServers.push( { 'addr': 'localhost', 'port': 3060, 'latency': 0 } );
 
 
     // Launch green slice
-    exec('cd www; http-server -p 9999', function(err, out, code) 
+    exec('cd www; http-server -p 8080', function(err, out, code) 
      {
        console.log("attempting to launch monitor");
        if (err instanceof Error)
