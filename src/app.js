@@ -45,6 +45,7 @@ client.lrange("servers", 0, -1, function (err, reply){
   if(flag == 0)
   {
     client.lpush("servers", ip);
+    client.lpush("cpuload", cpuAverage());
   }
 });
 
@@ -189,7 +190,7 @@ function memoryLoad()
   if(load > 90)
   {
     client.set("route", 1);
-    sendMail();
+    // sendMail();
   }
   // if(load < 70)
   // {
@@ -238,7 +239,7 @@ function cpuAverage()
   if(usage > 50)
   {
     client.set("route", 1);
-    sendMail();
+    // sendMail();
   }
   // if( usage <)
 
@@ -255,8 +256,11 @@ var nodeServers = [];
 //////////////
 setInterval( function () 
 {
+
   var message = ip + "#" + cpuAverage() + "#" + memoryLoad();
   console.log(message);
+  client.lpush("cpuload", cpuAverage());
+  client.rpop("cpuload");
   client.set( ip, message);
   
 }, 2000);
