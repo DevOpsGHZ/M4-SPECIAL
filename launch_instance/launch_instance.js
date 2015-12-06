@@ -10,7 +10,6 @@ var fs = require('fs');
 // AWS.config.accessKeyId = process.env.AWS_ACCESS_KEY_ID;
 // AWS.config.secretAccessKey= process.env.AWS_ACCESS_KEY;
 
-console.log('here');
 
 var instanceParams = {
   	       region: 'us-east-1',
@@ -21,7 +20,6 @@ var instanceParams = {
 
 var ec2 = new AWS.EC2(instanceParams);
 
-console.log('here');
 
 var properties = {
            ImageId: 'ami-d05e75b8', 

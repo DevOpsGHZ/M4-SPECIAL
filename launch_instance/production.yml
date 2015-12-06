@@ -1,5 +1,5 @@
 ---
-- hosts: server 
+- hosts: all 
   tasks:
     - name: Create production directory
       file: state=directory path=~/production
