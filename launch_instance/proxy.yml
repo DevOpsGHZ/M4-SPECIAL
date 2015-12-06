@@ -1,0 +1,93 @@
+---
+- hosts: all
+  tasks:
+    - name: Create proxy directory
+      file: state=directory path=~/proxy
+
+    - name: Upload Dockefile
+      copy: src=proxy-Dockerfile dest=~/proxy/Dockerfile
+    
+    - stat: path=~/proxy/M4-SPECIAL
+      register: repo_exist
+    
+    - name: Git clone
+      command: git clone https://github.com/DevOpsGHZ/M4-SPECIAL
+      when: repo_exist.stat.exists == False
+      args:
+        chdir: ~/proxy
+
+    - name: Git pull
+      command: git pull
+      when: repo_exist.stat.exists == True
+      args:
+        chdir: ~/proxy/M4-SPECIAL
+   
+    - name: Registry
+      docker:
+        name: registry
+        image: registry:2
+        ports:
+          5000:5000
+        docker_api_version: 1.18
+      sudo: yes
+
+#    - name: Redis container
+#      docker:
+#        name: myredis
+#        image: redis
+#        command: redis-server --appendonly yes
+#        state: started
+#        expose:
+#          - 6379
+#        docker_api_version: 1.18
+#      sudo: yes
+    - name: Redis ambassador
+      docker:
+        name: redis_ambassador
+        image: svendowideit/ambassador
+        expose:
+          - 6379
+        env:
+            REDIS_PORT_6379_TCP: tcp://52.90.214.22:6379
+        state: started
+        docker_api_version: 1.18
+      sudo: yes
+
+    - name: Build
+      command: docker build -t proxy .
+      args:
+        chdir: /home/ubuntu/proxy
+      sudo: yes
+
+    - name: Tag
+      command: docker tag -f proxy localhost:5000/sample:proxy
+      sudo: yes
+   
+    - name: push
+      command: docker push localhost:5000/sample:proxy
+      sudo: yes
+    
+    - name: stop proxy 
+      command: docker rm -f proxy
+      sudo: yes
+      ignore_errors: yes
+
+    - name: Deploy proxy 
+      docker:
+        name: proxy 
+        image: localhost:5000/sample:proxy
+        registry: localhost:5000
+        state: restarted
+        pull: always
+        links:
+          - "redis_ambassador:redis"
+        ports:
+          - 3000:3000
+          - 3001:3001
+          - 3002:3002
+          - 8080:8080 
+        docker_api_version: 1.18
+      sudo: yes
+   # - name: run
+   #   command: docker run -p 50100:8080 -d --name app localhost:5000/sample:latest
+   #   sudo: yes 
